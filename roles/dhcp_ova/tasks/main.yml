@@ -57,7 +57,7 @@
       validate_certs: no
       folder: "{{ vcenter.folder_absolute_path }}"
       name: "{{ item.name }}"
-      state: "{{ vcenter.vm_power_state }}"
+      state: poweredoff
       template: "{{ vcenter.template_name }}"
       disk:
       - size_gb: 120
@@ -74,9 +74,15 @@
       customvalues:
         - key: guestinfo.ignition.config.data
           value: "{{ appendBootstrapContent }}"
+        - key: "disk.EnableUUID"
+          value: "TRUE"
+        - key: "guestinfo.ignition.config.data.encoding"
+          value: "base64"
+        - key: "sched.cpu.latencySensitivity"
+          value: "high"
     loop: "{{ bootstrap_vms }}"
 
-  - name: Create master VMs from ther template
+  - name: Create master VMs from the template
     vmware_guest:
       hostname: "{{ vcenter.ip }}"
       username: "{{ vcenter.service_account_username }}"
@@ -85,7 +91,7 @@
       validate_certs: no
       folder: "{{ vcenter.folder_absolute_path }}"
       name: "{{ item.name }}"
-      state: "{{ vcenter.vm_power_state }}"
+      state: poweredoff
       template: "{{ vcenter.template_name }}"
       disk:
       - size_gb: 120
@@ -100,8 +106,14 @@
         mac: "{{ item.macaddr }}"
       wait_for_ip_address: no
       customvalues:
-       - key: guestinfo.ignition.config.data
-         value: "{{ masterContent }}"
+        - key: guestinfo.ignition.config.data
+          value: "{{ masterContent }}"
+        - key: "disk.EnableUUID"
+          value: "TRUE"
+        - key: "guestinfo.ignition.config.data.encoding"
+          value: "base64"
+        - key: "sched.cpu.latencySensitivity"
+          value: "high"
     loop: "{{ master_vms }}"
 
   - name: Create worker VMs from the template
@@ -113,7 +125,7 @@
       validate_certs: no
       folder: "{{ vcenter.folder_absolute_path }}"
       name: "{{ item.name }}"
-      state: "{{ vcenter.vm_power_state }}"
+      state: poweredoff
       template: "{{ vcenter.template_name }}"
       disk:
       - size_gb: 120
@@ -128,6 +140,39 @@
         mac: "{{ item.macaddr }}"
       wait_for_ip_address: no
       customvalues:
-       - key: guestinfo.ignition.config.data
-         value: "{{ workerContent }}"
+        - key: guestinfo.ignition.config.data
+          value: "{{ workerContent }}"
+        - key: "disk.EnableUUID"
+          value: "TRUE"
+        - key: "guestinfo.ignition.config.data.encoding"
+          value: "base64"
+        - key: "sched.cpu.latencySensitivity"
+          value: "high"
     loop: "{{ worker_vms }}"
+
+  # the following two tasks address an issue with assigning mac addresses on creation of a VM from a template
+  # ansible bug #51124
+  - name: Update mac_address
+    vmware_guest_network:
+      hostname: "{{ vcenter.ip }}"
+      username: "{{ vcenter.service_account_username }}"
+      password: "{{ vcenter.service_account_password }}"
+      validate_certs: False
+      name: "{{ item.name }}"
+      networks:
+      - label: "Network adapter 1"
+        state: present
+        manual_mac: "{{ item.macaddr }}"
+    loop:  "{{ lookup('flattened', [bootstrap_vms,master_vms,worker_vms]) }}" 
+
+  - name: Update the powerstate of all the machines
+    vmware_guest:
+      hostname: "{{ vcenter.ip }}"
+      username: "{{ vcenter.service_account_username }}"
+      password: "{{ vcenter.service_account_password }}"
+      datacenter: "{{ vcenter.datacenter }}"
+      validate_certs: no
+      folder: "{{ vcenter.folder_absolute_path }}"
+      name: "{{ item.name }}"
+      state: "{{ vcenter.vm_power_state }}"
+    loop:  "{{ lookup('flattened', [bootstrap_vms,master_vms,worker_vms]) }}" 
