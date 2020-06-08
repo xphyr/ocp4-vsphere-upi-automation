@@ -4,6 +4,7 @@
       dest: /var/lib/tftpboot/rhcos/initramfs.img
       force: yes
       mode: 0555
+    become: true
 
   - name: Downloading OpenShift installer kernel
     get_url:
@@ -11,3 +12,4 @@
       dest: /var/lib/tftpboot/rhcos/kernel
       force: yes
       mode: 0555
+    become: true

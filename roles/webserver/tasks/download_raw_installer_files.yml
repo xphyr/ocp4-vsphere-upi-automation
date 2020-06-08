@@ -3,3 +3,4 @@
       url: "{{ download.raw }}"
       dest: /var/www/html/install/rhcos.raw.gz
       mode: 0555
+    become: true
