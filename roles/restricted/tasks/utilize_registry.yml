@@ -4,6 +4,7 @@
 
     - name: Update the CA trust
       command: update-ca-trust extract
+      become: true
 
     - name: Pause for few seconds for the ca-trust to be updated
       pause:

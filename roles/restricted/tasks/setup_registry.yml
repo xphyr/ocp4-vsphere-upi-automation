@@ -17,8 +17,15 @@
         cmd: htpasswd -bBc /opt/registry/auth/htpasswd {{ registry.username | default('ansible') }}  {{ registry.password | default('ansible') }}
       become: true
 
+    - name: Ensure podman is installed
+      package:
+        name:
+          - podman
+      become: true
+    
     - name: Ensure no pods are by default running
       command: podman rm -af
+      become: true
 
     - name: Run the registry pod 
       command: |
@@ -49,9 +56,16 @@
       file: 
         path: /etc/pki/ca-trust/source/anchors/domain.crt
         state: absent
+      become: true
 
-    - name: Add the certificate to the trusted certificates on the ansible controller
+    - name: Fetch the newly created certificates
       fetch:
         src: /opt/registry/certs/domain.crt
-        dest: /etc/pki/ca-trust/source/anchors/
+        dest: "{{ role_path }}/files/"
         flat: yes
+    
+    - name: Add the certificate to the trusted certificates on the ansible controller
+      copy:
+        src: "{{ role_path }}/files/domain.crt"
+        dest: "/etc/pki/ca-trust/source/anchors/"
+      become: true
