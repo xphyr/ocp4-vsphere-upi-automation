@@ -21,6 +21,9 @@
       import_role:
         name: restricted
         tasks_from: setup_registry
+      when: 
+        - registry.deploy_registry is not defined
+        - registry.deploy_registry = True
 - hosts: localhost
   gather_facts: False
   tasks:

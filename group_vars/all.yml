@@ -47,6 +47,7 @@ proxy:
     -----END CERTIFICATE-----  
 registry:
   enabled: false
+  deploy_registry: false
   product_repo: openshift-release-dev
   product_release_name: ocp-release
   product_release_version: 4.4.0-x86_64

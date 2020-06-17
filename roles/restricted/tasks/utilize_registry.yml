@@ -1,10 +1,24 @@
-    - name:  Capture the content of the certificate
+    - name: Create the files directory in the restricted role, if it doesn't already exist 
+      file:
+        path: "{{ role_path }}/files"
+        state: directory
+        mode: '0755'
+    
+    - name:  Capture the content of the certificate to a file
+      shell: 
+        cmd: openssl s_client -showcerts -connect "{{ registry.host }}:{{ registry.port }}" < /dev/null 2>/dev/null | openssl x509 -outform PEM > "{{ role_path }}/files/registry.crt"
+        creates: "{{ role_path }}/files/registry.crt"
+
+    - name: Store the certificate for later use    
       set_fact:
-        registry: "{{ registry | combine({ 'cert_content' : lookup('file','/etc/pki/ca-trust/source/anchors/domain.crt') }, recursive=True) }}"
+        registry: "{{ registry | combine({ 'cert_content' : lookup('file', '{{ role_path }}/files/registry.crt') }, recursive=True) }}"
 
     - name: Update the CA trust
       command: update-ca-trust extract
       become: true
+      when: 
+        - registry.deploy_registry is not defined 
+        - registry.deploy_registry = True
 
     - name: Pause for few seconds for the ca-trust to be updated
       pause:
@@ -17,12 +31,6 @@
     - name: Register the new pull secret
       set_fact: 
         registry_pull_secret: "{'{{ registry.host }}:{{ registry.port }}':{'auth':'{{ registry_credentials | b64encode }}','email': '{{ registry.email }}' }}"
-
-    - name: Create the files directory in the restricted role, if it doesn't already exist 
-      file:
-        path: "{{ role_path }}/files"
-        state: directory
-        mode: '0755'
 
     - name: Save the config.pull_secret variable into a file 
       copy: 
