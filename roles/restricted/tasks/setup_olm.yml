@@ -1,0 +1,41 @@
+- name: Create OLM Catalog
+  command: | 
+    oc adm catalog build \
+    --appregistry-org=redhat-operators \
+    --from=registry.redhat.io/openshift4/ose-operator-registry:v4.4 \
+    --filter-by-os="linux/amd64" \
+    --to="{{ registry.host }}:{{ registry.port }}/{{ registry.olm_repo }}"/redhat-operators:v1 \
+    -a "{{ role_path }}/files/pull-secret.json"
+  args:
+    creates: "{{ playbook_dir }}/olm_catalog_created"
+  register: olm_catalog
+
+- name: create marker that olm_catalog was created
+  file: 
+    path: "{{ playbook_dir }}/olm_catalog_created"
+    state: touch 
+    mode: 0644
+  when: olm_catalog
+
+- name: Mirror OLM Images
+  command: |
+    oc adm catalog mirror \
+    "{{ registry.host }}:{{ registry.port }}/{{ registry.olm_repo }}"/redhat-operators:v1 \
+    "{{ registry.host }}:{{ registry.port }}/{{ registry.olm_repo }}" \
+    -a "{{ role_path }}/files/pull-secret.json" \
+    --filter-by-os="linux/amd64"
+  args:
+    creates: "{{ playbook_dir }}/olm_mirror_created"
+  register: olm_mirror
+
+- name: create marker that olm_mirror was created
+  file: 
+    path: "{{ playbook_dir }}/olm_mirror_created"
+    state: touch 
+    mode: 0644
+  when: olm_mirror
+
+- name: Create Catalogsource.yaml file
+  template:
+    src: "catalogsource.yaml.j2"
+    dest: "{{ playbook_dir }}/olm/catalogsource.yaml"

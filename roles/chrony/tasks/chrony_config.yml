@@ -1,0 +1,5 @@
+- name: Create Chrony MachineConfig manifest
+  template:
+    src: "50-restricted-chrony.j2"
+    dest: "{{ playbook_dir }}/install-dir/manifests/50-restricted-chrony"
+  connection: local

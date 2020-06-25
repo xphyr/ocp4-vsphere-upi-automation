@@ -1,0 +1,9 @@
+---
+- hosts: localhost
+  gather_facts: False
+  tasks:
+    - name: Generate group vars from template
+      template:
+        src: "{{ playbook_dir }}/roles/common/templates/all.yml.j2"
+        dest: "{{ playbook_dir }}/group_vars/all_autogen.yml"
+      connection: local

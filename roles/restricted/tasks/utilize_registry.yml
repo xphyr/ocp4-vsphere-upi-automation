@@ -49,6 +49,16 @@
         --from="quay.io/{{ registry.product_repo }}/{{ registry.product_release_name }}:{{ registry.product_release_version }}" \
         --to="{{ registry.host }}:{{ registry.port }}/{{ registry.repo }}" \
         --to-release-image="{{ registry.host }}:{{ registry.port }}/{{ registry.repo }}:{{ registry.product_release_name }}"
+      args:
+        creates: "{{ playbook_dir }}/registry_mirrored"
+      register: mirror_created 
+
+    - name: create marker that olm_catalog was created
+      file: 
+        path: "{{ playbook_dir }}/registry_mirrored"
+        state: touch 
+        mode: 0644
+      when: mirror_created
 
     - name: Extract openshift-install from registry 
       command: |

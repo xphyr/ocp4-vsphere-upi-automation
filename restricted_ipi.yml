@@ -1,0 +1,54 @@
+---
+- hosts: localhost
+  gather_facts: False
+  tasks:
+    - name: Set the cache of all the download links
+      import_role:
+        name: cache
+- hosts: localhost
+  gather_facts: True
+  environment:
+    PATH: "{{ playbook_dir }}/bin:{{ ansible_env.PATH }}"
+  tasks:
+    - name: Run all the common pre-install tasks
+      import_role:
+        name: ipi
+        tasks_from: pre_install
+- hosts: registries
+  gather_facts: False
+  tasks:
+    - name: Run the setup tasks for a restricted environment
+      import_role:
+        name: restricted
+        tasks_from: setup_registry
+      when: 
+        - registry.deploy_registry is not defined
+        - registry.deploy_registry = True
+- hosts: localhost
+  gather_facts: False
+  tasks:
+    - name: Run the tasks for a restricted environment
+      import_role:
+        name: restricted
+        tasks_from: utilize_registry
+    - name: Run the tasks to mirror OLM
+      import_role:
+        name: restricted
+        tasks_from: setup_olm
+- hosts: localhost
+  gather_facts: False
+  environment:
+    PATH: "{{ playbook_dir }}/bin:{{ ansible_env.PATH }}"
+  tasks:
+    - name: Generate the manifests
+      import_role:
+        name: ipi
+        tasks_from: install
+- hosts: localhost
+  gather_facts: False
+  tasks:
+    - name: Set internal NTP Servers
+      import_role:
+        name: chrony
+        tasks_from: chrony_config
+      when: chrony.custom_ntp
