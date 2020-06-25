@@ -2,7 +2,7 @@
   command: | 
     oc adm catalog build \
     --appregistry-org=redhat-operators \
-    --from=registry.redhat.io/openshift4/ose-operator-registry:v4.4 \
+    --from=registry.redhat.io/openshift4/ose-operator-registry:v4.5 \
     --filter-by-os="linux/amd64" \
     --to="{{ registry.host }}:{{ registry.port }}/{{ registry.olm_repo }}"/redhat-operators:v1 \
     -a "{{ role_path }}/files/pull-secret.json"
@@ -15,7 +15,7 @@
     path: "{{ playbook_dir }}/olm_catalog_created"
     state: touch 
     mode: 0644
-  when: olm_catalog
+  when: olm_catalog.changed
 
 - name: Mirror OLM Images
   command: |
@@ -33,7 +33,7 @@
     path: "{{ playbook_dir }}/olm_mirror_created"
     state: touch 
     mode: 0644
-  when: olm_mirror
+  when: olm_mirror.changed
 
 - name: Create Catalogsource.yaml file
   template:
