@@ -2,7 +2,7 @@
   command: | 
     oc adm catalog build \
     --appregistry-org=redhat-operators \
-    --from=registry.redhat.io/openshift4/ose-operator-registry:v4.5 \
+    --from=registry.redhat.io/openshift4/ose-operator-registry:v4.4 \
     --filter-by-os="linux/amd64" \
     --to="{{ registry.host }}:{{ registry.port }}/{{ registry.olm_repo }}"/redhat-operators:v1 \
     -a "{{ role_path }}/files/pull-secret.json"
